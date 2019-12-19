@@ -132,12 +132,12 @@ class Test1:
             assert mat_trace2[y_i][x_i] >= 1
 
     @pytest.fixture
-    def manhattan_dist_intersection_min(
-        self, fms, mat_trace1, mat_trace2, origin_offset
-    ):
-        return fms._manhattan_dist_intersection_min(
-            mat_trace1, mat_trace2, origin_offset
-        )
+    def intersections(self, fms, mat_trace1, mat_trace2):
+        return fms._intersections(mat_trace1, mat_trace2)
+
+    @pytest.fixture
+    def manhattan_dist_intersection_min(self, fms, intersections, origin_offset):
+        return fms._manhattan_dist_intersection_min(intersections, origin_offset)
 
     def test_manhattan_dist_intersection_min(self, manhattan_dist_intersection_min):
         assert manhattan_dist_intersection_min == 6
@@ -1218,12 +1218,12 @@ class Test2:
             assert mat_trace2[y_i][x_i] >= 1
 
     @pytest.fixture
-    def manhattan_dist_intersection_min(
-        self, fms, mat_trace1, mat_trace2, origin_offset
-    ):
-        return fms._manhattan_dist_intersection_min(
-            mat_trace1, mat_trace2, origin_offset
-        )
+    def intersections(self, fms, mat_trace1, mat_trace2):
+        return fms._intersections(mat_trace1, mat_trace2)
+
+    @pytest.fixture
+    def manhattan_dist_intersection_min(self, fms, intersections, origin_offset):
+        return fms._manhattan_dist_intersection_min(intersections, origin_offset)
 
     def test_manhattan_dist_intersection_min(self, manhattan_dist_intersection_min):
         assert manhattan_dist_intersection_min == 159
@@ -1238,4 +1238,4 @@ class Test3:
         )
 
     def test_manhattan_dist_intersection_min(self, fms):
-        assert fms.manhattan_dist_intersection_min == 135
+        assert fms.manhattan_dist_intersection_min() == 135

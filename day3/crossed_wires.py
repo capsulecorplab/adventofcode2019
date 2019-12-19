@@ -14,14 +14,18 @@
 # >>> wire1 = "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51"
 # >>> wire2 = "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
 # >>> fms = FuelManagementSystem(wire1, wire2)
-# >>> fms.manhattan_dist_intersection_min
+# >>> fms.manhattan_dist_intersection_min()
 # 135
+# >>> fms.steps_combined_min()
+# 410
 # >>>
 ################################################################################
 
 import re
-import numpy as np
 from typing import List, Tuple
+
+import numpy as np
+from nptyping import Array
 
 
 class FuelManagementSystem:
@@ -29,7 +33,20 @@ class FuelManagementSystem:
         self.wire1 = wire1
         self.wire2 = wire2
 
-    @property
+    def steps_combined_min(self) -> int:
+        trace_dir1 = self._trace_dir(self.wire1)
+        trace_dir2 = self._trace_dir(self.wire2)
+        mat_boundaries1 = self._mat_boundaries(trace_dir1)
+        mat_boundaries2 = self._mat_boundaries(trace_dir2)
+        origin_offset = self._origin_offset(mat_boundaries1, mat_boundaries2)
+        trace_coord1 = self._trace_coord(trace_dir1, origin_offset)
+        trace_coord2 = self._trace_coord(trace_dir2, origin_offset)
+        mat_shape = self._mat_shape(trace_coord1, trace_coord2)
+        mat_trace1 = self._mat_trace(trace_coord1, mat_shape, origin_offset)
+        mat_trace2 = self._mat_trace(trace_coord2, mat_shape, origin_offset)
+        intersections = self._intersections(mat_trace1, mat_trace2)
+        return self._steps_combined_min(intersections, trace_coord1, trace_coord2)
+
     def manhattan_dist_intersection_min(self) -> int:
         trace_dir1 = self._trace_dir(self.wire1)
         trace_dir2 = self._trace_dir(self.wire2)
@@ -41,32 +58,57 @@ class FuelManagementSystem:
         mat_shape = self._mat_shape(trace_coord1, trace_coord2)
         mat_trace1 = self._mat_trace(trace_coord1, mat_shape, origin_offset)
         mat_trace2 = self._mat_trace(trace_coord2, mat_shape, origin_offset)
-        return self._manhattan_dist_intersection_min(
-            mat_trace1, mat_trace2, origin_offset
-        )
+        intersections = self._intersections(mat_trace1, mat_trace2)
+        return self._manhattan_dist_intersection_min(intersections, origin_offset)
+
+    @staticmethod
+    def _steps_combined_min(
+        intersections: Array[np.int64, ..., 2],
+        trace_coord1: List[Tuple[int, int]],
+        trace_coord2: List[Tuple[int, int]],
+    ) -> int:
+        intersections_trace1 = {}
+        intersections_trace2 = {}
+        for i, e in enumerate(trace_coord1):
+            if e in intersections:
+                intersections_trace1[e] = i
+        for i, e in enumerate(trace_coord2):
+            if e in intersections:
+                intersections_trace2[e] = i
+        steps_combined_buffer = []
+        for x_i, y_i in intersections:
+            try:
+                steps_combined_buffer.append(
+                    intersections_trace1[(x_i, y_i)] + intersections_trace2[(x_i, y_i)]
+                )
+            except:
+                pass
+        return min(steps_combined_buffer)
 
     @staticmethod
     def _manhattan_dist_intersection_min(
-        mat_trace1: "np.ndarray",
-        mat_trace2: "np.ndarray",
-        origin_offset: Tuple[int, int],
+        intersections: Array[np.int64, ..., 2], origin_offset: Tuple[int, int]
     ) -> int:
-        mat_intersections = mat_trace1 * mat_trace2
-        intersections = np.transpose(np.nonzero(mat_intersections))
-        x_offset, y_offset = origin_offset[1], origin_offset[0]
+        x_offset, y_offset = origin_offset[0], origin_offset[1]
         manhattan_distances = []
-        for np_x_i, np_y_i in intersections:
-            x_i, y_i = np_x_i.item(), np_y_i.item()
+        for x_i, y_i in intersections:
             manhattan_distance = abs(x_offset - x_i) + abs(y_offset - y_i)
             manhattan_distances.append(manhattan_distance)
         return min(manhattan_distances)
+
+    @staticmethod
+    def _intersections(
+        mat_trace1: Array[np.int64], mat_trace2: Array[np.int64]
+    ) -> Array[np.int64, ..., 2]:
+        nonzeros = np.nonzero(mat_trace1 * mat_trace2)
+        return np.transpose(np.array([nonzeros[1], nonzeros[0]]))
 
     @staticmethod
     def _mat_trace(
         trace_coord: List[Tuple[int, int]],
         mat_shape: Tuple[int, int],
         origin_offset: Tuple[int, int],
-    ) -> "np.ndarray":
+    ) -> Array[np.int64]:
         mat_buffer = np.zeros(mat_shape)
         for x_i, y_i in trace_coord:
             mat_buffer[y_i][x_i] = 1
@@ -168,4 +210,5 @@ if __name__ == "__main__":
     wire2 = wires[1]
 
     fms = FuelManagementSystem(wire1, wire2)
-    print(fms.manhattan_dist_intersection_min)
+    print(fms.manhattan_dist_intersection_min())
+    print(fms.steps_combined_min())
