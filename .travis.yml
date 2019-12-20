@@ -4,13 +4,7 @@ python:
   - "3.6"
 install:
   - pip install --upgrade pip
-  - pip install black
-  - pip install coverage
-  - pip install mypy
-  - pip install python-coveralls
-  - pip install pytest
-  - pip install pytest-black
-  - pip install pytest-cov
+  - pip install -r dev-requirements.txt
   - pip install -r requirements.txt
 script:
   - pytest -vvs --cov-report term-missing --cov=./ --black
